@@ -3,4 +3,5 @@ opencv-python-headless
 numpy
 Pillow
 ultralytics
+smtplib
 geocoder
