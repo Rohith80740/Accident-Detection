@@ -79,7 +79,7 @@ HOSPITAL_DATABASE = [
         }
     },
     {
-        "name": "Nithin's Hospital",
+        "name": "Rohit's Hospital",
         "email": "nithin9231@gmail.com",
         "phone": "6302810409",
         "location": {
@@ -94,7 +94,7 @@ HOSPITAL_DATABASE = [
 @st.cache_resource
 def load_model():
     try:
-        model = YOLO("best.pt")
+        model = YOLO("Models/best.pt")
         return model
     except Exception as e:
         st.error(f"🚨 Model loading failed: {str(e)}")
