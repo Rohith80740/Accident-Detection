@@ -1,0 +1,12 @@
+names:
+- Accident
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: accident-detection-model
+  url: https://universe.roboflow.com/accident-detection-model/accident-detection-model/dataset/2
+  version: 2
+  workspace: accident-detection-model
+test: ../test/images
+train: ../train/images
+val: ../valid/images
