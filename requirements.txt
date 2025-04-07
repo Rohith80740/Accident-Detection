@@ -1,5 +1,5 @@
 streamlit
-open cv
+open cv - python
 numpy
 Pillow
 ultralytics
