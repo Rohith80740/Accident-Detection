@@ -1,6 +1,25 @@
-streamlit
-opencv
-numpy
-Pillow
-ultralytics
-geocoder
+# Core Requirements
+streamlit==1.32.0
+opencv-python==4.9.0.80
+numpy==1.26.4
+Pillow==10.2.0
+ultralytics==8.1.24
+
+# Email and Networking
+smtplib==0.0.1  # Built-in
+email-validator==2.1.1
+
+# Location Services
+geocoder==1.38.1
+
+# Utility Libraries
+python-dotenv==1.0.1  # For environment variables
+tempfile==0.0.1  # Built-in
+datetime==5.2  # Built-in
+contextlib2==21.6.0
+
+# Additional Dependencies
+matplotlib==3.8.3  # For potential visualization
+seaborn==0.13.2  # For potential visualization
+tqdm==4.66.2  # For progress bars
+requests==2.31.0  # For potential API calls
