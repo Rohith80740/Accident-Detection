@@ -94,7 +94,7 @@ HOSPITAL_DATABASE = [
 @st.cache_resource
 def load_model():
     try:
-        model = YOLO("D:/All Documents/Projects/Real-Time Accident Detection and Alert System/Models/best.pt")
+        model = YOLO("best.pt")
         return model
     except Exception as e:
         st.error(f"🚨 Model loading failed: {str(e)}")
