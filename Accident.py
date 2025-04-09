@@ -29,7 +29,7 @@ MAX_VIDEO_SIZE_MB = 100
 SUPPORTED_IMAGE_TYPES = ["jpg", "jpeg", "png"]
 SUPPORTED_VIDEO_TYPES = ["mp4", "avi", "mov"]
 FRAME_SKIP = 2
-ALERT_RADIUS_KM = 15  # Alert hospitals within this radius
+ALERT_RADIUS_KM = 100  # Alert hospitals within this radius
 MAX_HOSPITALS_TO_ALERT = 3  # Maximum hospitals to notify
 
 # Email Configuration
@@ -80,8 +80,8 @@ HOSPITAL_DATABASE = [
     },
     {
         "name": "Rohit's Hospital",
-        "email": "nithin9231@gmail.com",
-        "phone": "6302810409",
+        "email": "rrkips2003@gmail.com",
+        "phone": "8074013857",
         "location": {
             "latitude": 17.4431917,
             "longitude": 78.433787,
