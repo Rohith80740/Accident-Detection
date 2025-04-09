@@ -1,4 +1,11 @@
-streamlit==1.32.2
-opencv-python==4.9.0.80
-numpy==1.26.4
-Pillow==10.2.0
+# requirements.txt
+
+# System dependencies (install via apt):
+# sudo apt update && sudo apt install libgl1-mesa-glx
+
+streamlit
+opencv-python
+pandas
+numpy
+matplotlib
+Pillow
