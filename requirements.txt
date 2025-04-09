@@ -1,16 +1,8 @@
-# Core dependencies
 streamlit>=1.24.0
+opencv-python-headless>=4.7.0
 numpy>=1.24.0
 Pillow>=9.5.0
 ultralytics>=8.0.0
 geocoder>=1.38.1
 python-dateutil>=2.8.2
 email-validator>=2.0.0
-
-# OpenCV - headless version for servers without display
-opencv-python-headless>=4.7.0
-
-# System requirements (install via your system package manager)
-# Ubuntu/Debian: sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
-# CentOS/RHEL: sudo yum install -y mesa-libGL
-# Alpine: apk add --no-cache libgl
