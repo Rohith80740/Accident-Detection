@@ -149,90 +149,90 @@ def get_current_location():
         return None
 
 def send_email_alert(subject, message, receiver_email, attachment_path=None, video_path=None):
-    """Send email notification with attachments"""
+    """Send email notification with attachments using multiple SMTP methods"""
     try:
+        # Create message container
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = receiver_email
         msg['Subject'] = subject
         
+        # Attach the message body
         msg.attach(MIMEText(message, 'plain'))
         
+        # Attach image if provided
         if attachment_path and os.path.exists(attachment_path):
-            with open(attachment_path, 'rb') as f:
-                img = MIMEImage(f.read())
-                img.add_header('Content-Disposition', 'attachment', 
-                             filename=os.path.basename(attachment_path))
-                msg.attach(img)
+            try:
+                with open(attachment_path, 'rb') as f:
+                    img = MIMEImage(f.read())
+                    img.add_header('Content-Disposition', 'attachment', 
+                                 filename=os.path.basename(attachment_path))
+                    msg.attach(img)
+            except Exception as e:
+                st.error(f"Failed to attach image: {str(e)}")
         
+        # Attach video if provided
         if video_path and os.path.exists(video_path):
-            part = MIMEBase('application', 'octet-stream')
-            with open(video_path, 'rb') as f:
-                part.set_payload(f.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition',
-                           'attachment',
-                           filename=os.path.basename(video_path))
-            msg.attach(part)
+            try:
+                part = MIMEBase('application', 'octet-stream')
+                with open(video_path, 'rb') as f:
+                    part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition',
+                               'attachment',
+                               filename=os.path.basename(video_path))
+                msg.attach(part)
+            except Exception as e:
+                st.error(f"Failed to attach video: {str(e)}")
         
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.send_message(msg)
+        # Try multiple ports and connection methods
+        ports_to_try = [465, 587]  # SSL and TLS ports
+        last_exception = None
         
-        return True
-    except Exception as e:
-        st.error(f"Failed to send email to {receiver_email}: {str(e)}")
-        return False
-
-def send_all_alerts(subject, message, accident_location=None, attachment_path=None, video_path=None):
-    """Unified alert function with hospital proximity check"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    full_message = f"{message}\n\nTimestamp: {timestamp}"
-    if accident_location:
-        if isinstance(accident_location, dict):
-            full_message += (f"\nAccident Location: {accident_location.get('address', 'Unknown')}"
-                           f"\nCoordinates: {accident_location.get('latitude')}, {accident_location.get('longitude')}"
-                           f"\nGoogle Maps: https://maps.google.com/?q={accident_location.get('latitude')},{accident_location.get('longitude')}")
-            
-            # Find nearby hospitals
-            nearby_hospitals = []
-            for hospital in HOSPITAL_DATABASE:
-                distance = calculate_distance(
-                    accident_location['latitude'],
-                    accident_location['longitude'],
-                    hospital['location']['latitude'],
-                    hospital['location']['longitude']
-                )
-                if distance <= ALERT_RADIUS_KM:
-                    nearby_hospitals.append((hospital, distance))
-            
-            # Sort by distance (nearest first)
-            nearby_hospitals.sort(key=lambda x: x[1])
-            
-            if nearby_hospitals:
-                st.success(f"🏥 Found {len(nearby_hospitals)} nearby hospitals within {ALERT_RADIUS_KM} km")
-                alert_count = 0
-                
-                for hospital, distance in nearby_hospitals:
-                    if alert_count >= MAX_HOSPITALS_TO_ALERT:
-                        break
-                        
-                    hospital_msg = f"{full_message}\n\nNearest Hospital: {hospital['name']} ({distance:.1f} km)"
-                    
-                    # Send email to hospital
-                    if send_email_alert(
-                        subject,
-                        hospital_msg,
-                        hospital['email'],
-                        attachment_path,
-                        video_path
-                    ):
-                        st.info(f"📧 Alert sent to {hospital['name']} ({distance:.1f} km)")
-                        alert_count += 1
+        for port in ports_to_try:
+            try:
+                if port == 465:
+                    # Try SSL connection
+                    with smtplib.SMTP_SSL('smtp.gmail.com', port, timeout=10) as server:
+                        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                        server.send_message(msg)
+                        st.success(f"Email sent successfully via SSL (port {port})")
+                        return True
+                elif port == 587:
+                    # Try STARTTLS connection
+                    with smtplib.SMTP('smtp.gmail.com', port, timeout=10) as server:
+                        server.ehlo()
+                        server.starttls()
+                        server.ehlo()
+                        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                        server.send_message(msg)
+                        st.success(f"Email sent successfully via STARTTLS (port {port})")
+                        return True
+            except smtplib.SMTPAuthenticationError as e:
+                st.error(f"Authentication failed on port {port}: {str(e)}")
+                last_exception = e
+                break  # No point trying other ports if auth is failing
+            except smtplib.SMTPException as e:
+                last_exception = e
+                st.warning(f"Failed to send via port {port}: {str(e)}")
+                continue
+            except Exception as e:
+                last_exception = e
+                st.warning(f"Unexpected error with port {port}: {str(e)}")
+                continue
+        
+        # If we get here, all attempts failed
+        if last_exception:
+            st.error(f"All email sending attempts failed. Last error: {str(last_exception)}")
         else:
-            full_message += f"\nLocation: {accident_location}"
-
+            st.error("Email sending failed with unknown error")
+        
+        return False
+        
+    except Exception as e:
+        st.error(f"Email sending failed completely: {str(e)}")
+        return False
+        
 # Sidebar Configuration
 st.sidebar.title("Settings")
 
