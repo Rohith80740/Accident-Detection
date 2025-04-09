@@ -1,11 +1,10 @@
-# requirements.txt
-
-# System dependencies (install via apt):
-# sudo apt update && sudo apt install libgl1-mesa-glx
-
-streamlit
-opencv-python
-pandas
-numpy
-matplotlib
-Pillow
+streamlit==1.31.0
+opencv-python-headless==4.8.1.78
+numpy==1.26.3
+Pillow==10.2.0
+ultralytics==8.1.2
+geocoder==1.38.1
+smtplib3==0.0.1
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
