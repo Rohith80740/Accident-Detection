@@ -501,12 +501,3 @@ else:
     )
     if uploaded_file is not None:
         process_video(uploaded_file)
-
-# Security warning
-st.warning("""
-**Important Security Notice:**
-- This implementation contains sensitive credentials
-- For production use:
-  - Store secrets in secure secret managers
-  - Comply with local emergency service regulations
-""")
