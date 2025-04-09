@@ -29,12 +29,12 @@ MAX_VIDEO_SIZE_MB = 100
 SUPPORTED_IMAGE_TYPES = ["jpg", "jpeg", "png"]
 SUPPORTED_VIDEO_TYPES = ["mp4", "avi", "mov"]
 FRAME_SKIP = 2
-ALERT_RADIUS_KM = 100  # Alert hospitals within this radius
+ALERT_RADIUS_KM = 15  # Alert hospitals within this radius
 MAX_HOSPITALS_TO_ALERT = 3  # Maximum hospitals to notify
 
 # Email Configuration
 EMAIL_SENDER = "accidentalertsystem1122@gmail.com"
-EMAIL_PASSWORD = "wvczuqhhhtlhwbmk"  # App-specific password
+EMAIL_PASSWORD = "wvczuqhhhtlhwbmk"   # App-specific password
 
 # Hospital Database
 HOSPITAL_DATABASE = [
@@ -94,7 +94,7 @@ HOSPITAL_DATABASE = [
 @st.cache_resource
 def load_model():
     try:
-        model = YOLO("Models/best.pt")
+        model = YOLO("C:/Users/rishi/Downloads/Accident Detection\Models/best.pt")
         return model
     except Exception as e:
         st.error(f"🚨 Model loading failed: {str(e)}")
