@@ -1,17 +1,19 @@
-# Core Application Dependencies
-streamlit>=1.32.0
-ultralytics>=8.0.230
-opencv-python-headless>=4.9.0.80
-numpy>=1.26.4
-Pillow>=10.2.0
-geocoder>=1.38.1
-python-dotenv>=1.0.1
-requests>=2.31.0
-tqdm>=4.66.2
-pandas>=2.2.1
-matplotlib>=3.8.3
-seaborn>=0.13.2
+# Core ML & CV Libraries
+opencv-python-headless>=4.5.0
+numpy>=1.19.0
+Pillow>=8.0.0
+ultralytics>=8.0.0
+roboflow>=1.0.0
+matplotlib>=3.3.0
 
-# Email Functionality
-secure-smtplib>=0.1.1
-pyopenssl>=23.3.0
+# Web Application
+streamlit>=1.10.0
+
+# Location & Mapping
+geocoder>=1.38.1
+
+# For Google Colab integration (if needed)
+# google-colab  # Commented out as not needed in cloud deployment
+
+# Optional for output and visualization improvements
+ipython>=7.0.0
