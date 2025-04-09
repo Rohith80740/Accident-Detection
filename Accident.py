@@ -34,7 +34,7 @@ MAX_HOSPITALS_TO_ALERT = 3  # Maximum hospitals to notify
 
 # Email Configuration
 EMAIL_SENDER = "accidentalertsystem1122@gmail.com"
-EMAIL_PASSWORD = "xyburhdkueoymmel"  # App-specific password
+EMAIL_PASSWORD = "wvczuqhhhtlhwbmk"  # App-specific password
 
 # Hospital Database
 HOSPITAL_DATABASE = [
