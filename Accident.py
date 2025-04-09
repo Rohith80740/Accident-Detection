@@ -1,5 +1,6 @@
+%%writefile Accident.py
+
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 from ultralytics import YOLO
@@ -16,11 +17,6 @@ from datetime import datetime
 from contextlib import contextmanager
 import geocoder
 import math
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Set page config
 st.set_page_config(
@@ -34,21 +30,12 @@ MAX_VIDEO_SIZE_MB = 100
 SUPPORTED_IMAGE_TYPES = ["jpg", "jpeg", "png"]
 SUPPORTED_VIDEO_TYPES = ["mp4", "avi", "mov"]
 FRAME_SKIP = 2
-ALERT_RADIUS_KM = 100  # Alert hospitals within this radius
+ALERT_RADIUS_KM = 15  # Alert hospitals within this radius
 MAX_HOSPITALS_TO_ALERT = 3  # Maximum hospitals to notify
 
-# Email Configuration using Streamlit secrets
-try:
-    EMAIL_SENDER = st.secrets["email"]["sender"]
-    EMAIL_PASSWORD = st.secrets["email"]["password"]
-    st.sidebar.success("✅ Email credentials loaded from secrets")
-except Exception as e:
-    st.sidebar.error("❌ Error loading email credentials from secrets")
-    logger.error(f"Failed to load email secrets: {str(e)}")
-    # Fallback to environment variables if needed
-    EMAIL_SENDER = os.environ.get("EMAIL_SENDER", "")
-    EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")
-
+# Email Configuration
+EMAIL_SENDER = "accidentalertsystem1122@gmail.com"
+EMAIL_PASSWORD = "wvczuqhhhtlhwbmk"  # App-specific password
 # Hospital Database
 HOSPITAL_DATABASE = [
     {
@@ -92,9 +79,9 @@ HOSPITAL_DATABASE = [
         }
     },
     {
-        "name": "Rohit's Hospital",
-        "email": "rrkips2003@gmail.com",
-        "phone": "8074013857",
+        "name": "Govt Hospital",
+        "email": "nithin9231@gmail.com",
+        "phone": "9999999999",
         "location": {
             "latitude": 17.4431917,
             "longitude": 78.433787,
@@ -107,29 +94,8 @@ HOSPITAL_DATABASE = [
 @st.cache_resource
 def load_model():
     try:
-        # Try to load from relative path first (for deployment)
-        model_paths = [
-            "Models/best.pt",  # Relative path for deployed app
-            "best.pt",         # Direct in current directory
-            "./best.pt",       # Explicitly in current directory
-        ]
-        
-        # Add the original path as fallback
-        model_paths.append("C:/Users/rishi/Downloads/Accident Detection/Models/best.pt")
-        
-        for path in model_paths:
-            try:
-                if os.path.exists(path):
-                    model = YOLO(path)
-                    st.sidebar.success(f"✅ Model loaded from: {path}")
-                    return model
-            except Exception as e:
-                continue
-                
-        # If we get here, none of the paths worked
-        st.error("🚨 Could not find model file in any location")
-        st.stop()
-        
+        model = YOLO("D:/All Documents/Projects/Real-Time Accident Detection and Alert System/Models/best.pt")
+        return model
     except Exception as e:
         st.error(f"🚨 Model loading failed: {str(e)}")
         st.stop()
@@ -181,65 +147,84 @@ def get_current_location():
     except Exception as e:
         st.warning(f"Could not get location: {str(e)}")
         return None
-
 def send_email_alert(subject, message, receiver_email, attachment_path=None, video_path=None):
-    """Send email notification with attachments"""
-    # Skip email sending if credentials are not available
-    if not EMAIL_SENDER or not EMAIL_PASSWORD:
-        st.warning("⚠️ Email credentials not configured. Skipping email alert.")
-        return False
+    """
+    Send email alert with optional attachments (image or video)
+    
+    Args:
+        subject (str): Email subject line
+        message (str): Email body text
+        receiver_email (str): Recipient email address
+        attachment_path (str, optional): Path to image attachment
+        video_path (str, optional): Path to video attachment
         
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
     try:
+        # Validate email parameters
+        if not all([subject, message, receiver_email]):
+            st.error("Missing required email parameters")
+            return False
+            
+        # Create message container
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = receiver_email
         msg['Subject'] = subject
         
+        # Attach message body
         msg.attach(MIMEText(message, 'plain'))
         
+        # Attach image if provided
         if attachment_path and os.path.exists(attachment_path):
-            with open(attachment_path, 'rb') as f:
-                img = MIMEImage(f.read())
-                img.add_header('Content-Disposition', 'attachment', 
-                             filename=os.path.basename(attachment_path))
-                msg.attach(img)
-        
-        if video_path and os.path.exists(video_path):
-            part = MIMEBase('application', 'octet-stream')
-            with open(video_path, 'rb') as f:
-                part.set_payload(f.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition',
-                           'attachment',
-                           filename=os.path.basename(video_path))
-            msg.attach(part)
-        
-        email_debug = st.sidebar.checkbox("Enable Email Debug Logs", False)
-        
-        with st.expander("Email Sending Log", expanded=email_debug):
-            status_log = st.empty()
-            
             try:
-                status_log.info(f"Connecting to SMTP server...")
-                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-                
-                status_log.info(f"Logging in as {EMAIL_SENDER}...")
-                server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-                
-                status_log.info(f"Sending email to {receiver_email}...")
-                server.send_message(msg)
-                
-                status_log.success(f"✅ Email sent successfully to {receiver_email}")
-                server.quit()
-                return True
+                with open(attachment_path, 'rb') as f:
+                    img = MIMEImage(f.read())
+                    img.add_header('Content-Disposition', 'attachment', 
+                                 filename=os.path.basename(attachment_path))
+                    msg.attach(img)
             except Exception as e:
-                status_log.error(f"❌ Email sending failed: {str(e)}")
-                logger.error(f"Email sending error: {str(e)}")
-                return False
+                st.warning(f"Could not attach image: {str(e)}")
         
+        # Attach video if provided
+        if video_path and os.path.exists(video_path):
+            try:
+                part = MIMEBase('application', 'octet-stream')
+                with open(video_path, 'rb') as f:
+                    part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition',
+                               'attachment',
+                               filename=os.path.basename(video_path))
+                msg.attach(part)
+            except Exception as e:
+                st.warning(f"Could not attach video: {str(e)}")
+        
+        # Send email with error handling
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                server.send_message(msg)
+            st.success(f"Email successfully sent to {receiver_email}")
+            return True
+            
+        except smtplib.SMTPAuthenticationError:
+            st.error("Authentication failed. Please check your email credentials.")
+            return False
+            
+        except smtplib.SMTPException as e:
+            error_code = e.smtp_code if hasattr(e, 'smtp_code') else 'N/A'
+            error_message = e.smtp_error.decode() if hasattr(e, 'smtp_error') else str(e)
+            st.error(f"SMTP Error {error_code}: {error_message}")
+            return False
+            
+        except Exception as e:
+            st.error(f"Unexpected error sending email: {str(e)}")
+            return False
+            
     except Exception as e:
-        st.error(f"Failed to send email to {receiver_email}: {str(e)}")
-        logger.error(f"Email preparation error: {str(e)}")
+        st.error(f"Failed to prepare email: {str(e)}")
         return False
 
 def send_all_alerts(subject, message, accident_location=None, attachment_path=None, video_path=None):
@@ -288,26 +273,8 @@ def send_all_alerts(subject, message, accident_location=None, attachment_path=No
                     ):
                         st.info(f"📧 Alert sent to {hospital['name']} ({distance:.1f} km)")
                         alert_count += 1
-            else:
-                st.warning("⚠️ No hospitals found within alert radius")
         else:
             full_message += f"\nLocation: {accident_location}"
-            
-            # Send to all hospitals without distance check
-            alert_count = 0
-            for hospital in HOSPITAL_DATABASE:
-                if alert_count >= MAX_HOSPITALS_TO_ALERT:
-                    break
-                    
-                if send_email_alert(
-                    subject,
-                    full_message,
-                    hospital['email'],
-                    attachment_path,
-                    video_path
-                ):
-                    st.info(f"📧 Alert sent to {hospital['name']}")
-                    alert_count += 1
 
 # Sidebar Configuration
 st.sidebar.title("Settings")
@@ -418,160 +385,110 @@ def process_image(uploaded_file):
                             attachment_path=result_path
                         )
                         
-                        try:
-                            os.unlink(result_path)
-                        except:
-                            pass
+                        os.unlink(result_path)
                 else:
                     st.success("✅ NO ACCIDENT DETECTED")
                     st.image(image, caption="No detections", use_container_width=True)
     
     except Exception as e:
         st.error(f"Error processing image: {str(e)}")
-        logger.error(f"Image processing error: {str(e)}")
 
 def process_video(uploaded_file):
-    """Process video with frame-by-frame object information"""
+    """Process video with frame-by-frame object information using Streamlit"""
     try:
         if uploaded_file.size > MAX_VIDEO_SIZE_MB * 1024 * 1024:
             st.error(f"File too large. Maximum size is {MAX_VIDEO_SIZE_MB}MB")
             return
         
+        # Display original video
         st.video(uploaded_file)
         
         if st.button("Process Video with Details", type="primary"):
             with temp_video_file(uploaded_file) as input_path:
-                cap = cv2.VideoCapture(input_path)
-                if not cap.isOpened():
-                    st.error("Error opening video file")
-                    return
-                
-                frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                fps = int(cap.get(cv2.CAP_PROP_FPS))
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                
-                output_path = "processed_video.mp4"
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
-                
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                result_placeholder = st.empty()
-                details_placeholder = st.empty()
-                
-                frame_count = 0
-                processed_count = 0
-                accident_frames = []
-                
-                try:
-                    while cap.isOpened():
-                        ret, frame = cap.read()
-                        if not ret:
-                            break
-                        
-                        frame_count += 1
-                        
-                        if frame_count % frame_skip != 0:
-                            continue
-                            
-                        results = model.predict(frame, conf=confidence_threshold)
-                        annotated_frame = results[0].plot()
-                        out.write(annotated_frame)
-                        processed_count += 1
-                        
-                        if len(results[0].boxes) > 0:
-                            objects = get_object_details(results[0].boxes)
-                            accident_frames.append({
-                                "frame_number": frame_count,
-                                "time_seconds": frame_count/fps,
-                                "objects": objects
-                            })
-                        
-                        progress = frame_count / total_frames
-                        progress_bar.progress(progress)
-                        status_text.text(f"📊 Processing frame {frame_count}/{total_frames}")
+                # Create a temporary directory for processed frames
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # Process video using YOLO directly
+                    results = model.predict(
+                        source=input_path,
+                        conf=confidence_threshold,
+                        save=True,
+                        project=temp_dir,
+                        name="processed",
+                        exist_ok=True
+                    )
                     
-                    cap.release()
-                    out.release()
+                    # Find the processed video file
+                    processed_video_path = os.path.join(temp_dir, "processed", os.path.basename(input_path))
                     
-                    if accident_frames:
-                        result_placeholder.warning(f"🚨 ACCIDENTS DETECTED IN {len(accident_frames)} FRAMES")
+                    if os.path.exists(processed_video_path):
+                        # Display processed video
+                        st.video(processed_video_path)
                         
-                        with st.expander("📝 Detailed Accident Report", expanded=True):
-                            st.write(f"Total frames with accidents: {len(accident_frames)}")
+                        # Check for accidents
+                        accident_frames = []
+                        for i, result in enumerate(results):
+                            if len(result.boxes) > 0:
+                                accident_frames.append({
+                                    "frame_number": i,
+                                    "time_seconds": i / 30,  # Assuming 30 FPS
+                                    "objects": get_object_details(result.boxes)
+                                })
+                        
+                        if accident_frames:
+                            st.warning(f"🚨 ACCIDENTS DETECTED IN {len(accident_frames)} FRAMES")
                             
-                            for accident in accident_frames:
-                                st.markdown(f"""
-                                    ### Frame {accident['frame_number']} (Time: {accident['time_seconds']:.1f}s)
-                                """)
+                            with st.expander("📝 Detailed Accident Report", expanded=True):
+                                st.write(f"Total frames with accidents: {len(accident_frames)}")
                                 
-                                for obj in accident['objects']:
+                                for accident in accident_frames:
                                     st.markdown(f"""
-                                        <div class="object-info">
-                                            <b>Object Type:</b> {obj['type']}<br>
-                                            <b>Confidence:</b> {obj['confidence']:.2f}<br>
-                                            <b>Bounding Box:</b> ({obj['coordinates']['x1']:.0f}, {obj['coordinates']['y1']:.0f}) to ({obj['coordinates']['x2']:.0f}, {obj['coordinates']['y2']:.0f})
-                                        </div>
-                                    """, unsafe_allow_html=True)
-                                st.markdown("---")
-                        
-                        location = get_current_location() if location_method == "Automatic (GPS)" else manual_location
-                        
-                        if enable_email:
-                            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            time_list = [f"{a['time_seconds']:.1f}s" for a in accident_frames]
-                            alert_msg = (
-                                f"Accidents detected in video at {timestamp}\n"
-                                f"Occurred at: {', '.join(time_list)}"
-                            )
+                                        ### Frame {accident['frame_number']} (Time: {accident['time_seconds']:.1f}s)
+                                    """)
+                                    
+                                    for obj in accident['objects']:
+                                        st.markdown(f"""
+                                            <div class="object-info">
+                                                <b>Object Type:</b> {obj['type']}<br>
+                                                <b>Confidence:</b> {obj['confidence']:.2f}<br>
+                                                <b>Bounding Box:</b> ({obj['coordinates']['x1']:.0f}, {obj['coordinates']['y1']:.0f}) to ({obj['coordinates']['x2']:.0f}, {obj['coordinates']['y2']:.0f})
+                                            </div>
+                                        """, unsafe_allow_html=True)
+                                    st.markdown("---")
                             
-                            send_all_alerts(
-                                "🚨 Multiple Accidents Detected",
-                                alert_msg,
-                                accident_location=location,
-                                video_path=output_path
-                            )
+                            location = get_current_location() if location_method == "Automatic (GPS)" else manual_location
+                            
+                            if enable_email:
+                                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                time_list = [f"{a['time_seconds']:.1f}s" for a in accident_frames]
+                                alert_msg = (
+                                    f"Accidents detected in video at {timestamp}\n"
+                                    f"Occurred at: {', '.join(time_list)}"
+                                )
+                                
+                                send_all_alerts(
+                                    "🚨 Multiple Accidents Detected",
+                                    alert_msg,
+                                    accident_location=location,
+                                    video_path=processed_video_path
+                                )
+                            
+                            # Download button for processed video
+                            with open(processed_video_path, "rb") as f:
+                                st.download_button(
+                                    label="Download Processed Video",
+                                    data=f,
+                                    file_name="processed_video.mp4",
+                                    mime="video/mp4"
+                                )
+                        else:
+                            st.success("✅ NO ACCIDENTS DETECTED IN VIDEO")
                     else:
-                        result_placeholder.success("✅ NO ACCIDENTS DETECTED IN VIDEO")
-                    
-                    st.video(output_path)
-                    
-                    with open(output_path, "rb") as f:
-                        st.download_button(
-                            label="Download Processed Video",
-                            data=f,
-                            file_name="processed_video.mp4",
-                            mime="video/mp4"
-                        )
-                
-                finally:
-                    if 'cap' in locals() and cap.isOpened():
-                        cap.release()
-                    if 'out' in locals():
-                        out.release()
-                    try:
-                        os.unlink(output_path)
-                    except:
-                        pass
+                        st.error("Failed to process video")
     
     except Exception as e:
         st.error(f"Error processing video: {str(e)}")
-        logger.error(f"Video processing error: {str(e)}")
 
 # Main Application Flow
-st.write("""
-## 📋 Application Overview
-This system detects accidents in images and videos using YOLOv8 and sends automatic alerts to nearby hospitals.
-""")
-
-# Model information
-with st.expander("ℹ️ About the Model"):
-    st.write("""
-    This application uses YOLOv8, a state-of-the-art object detection model trained specifically for accident detection.
-    The model can identify various types of accidents in real-time with high accuracy.
-    """)
-
 option = st.radio(
     "Select input type:",
     ("Image", "Video"),
@@ -594,26 +511,3 @@ else:
     )
     if uploaded_file is not None:
         process_video(uploaded_file)
-
-# Add troubleshooting section
-with st.expander("🔧 Troubleshooting"):
-    st.write("""
-    ### Common Issues
-    
-    #### Email Alerts Not Working
-    - Check that email secrets are properly configured
-    - Verify the app has permission to send emails
-    - If on Streamlit Cloud, make sure secrets are added in the dashboard
-    
-    #### Model Not Loading
-    - Check that the model file is included in your deployment
-    - The model file should be in a 'models' folder in your repository
-    
-    #### Location Detection Issues
-    - Try using manual location if automatic detection fails
-    - Some browsers or environments may block location services
-    """)
-
-# Footer
-st.markdown("---")
-st.markdown("Accident Detection Alert System v1.0 | Created for safety and quick emergency response")
