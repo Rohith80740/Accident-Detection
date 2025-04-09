@@ -1,10 +1,30 @@
-streamlit>=1.32.0
-ultralytics>=8.0.230
-opencv-python-headless>=4.9.0.80
-numpy>=1.26.4
-Pillow>=10.2.0
-geocoder>=1.38.1
-python-dotenv>=1.0.1
-torch>=2.2.1 --index-url https://download.pytorch.org/whl/cpu
-torchvision>=0.17.1
-tqdm>=4.66.2
+# Core Computer Vision
+ultralytics
+opencv-python
+numpy
+Pillow
+torch
+torchvision
+
+# Web Application
+streamlit
+geocoder
+
+# Email & Alerts
+smtplib
+email-validator
+email
+
+# Data Processing & Utilities
+matplotlib
+ipython
+python-dotenv
+tqdm
+shutilwhich
+
+# Model Formats
+onnx
+onnxruntime
+
+# Roboflow Integration
+roboflow
